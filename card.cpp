@@ -1,8 +1,10 @@
 //Initializing mapping
+#include "stdafx.h"
 #include "card.h"
+#include "cards.h"
 
-const char* Card::suitMap[4] = { "C", "D", "H", "S" };
-const char* Card::rankMap[14] = { " ", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A" };
+ const char* Card::suitMap[5] = {" ", "C", "D", "H", "S" };
+ const char* Card::rankMap[14] = { " ", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A" };
 
 
 bool operator<(const Card& k, const Card& c){
@@ -13,6 +15,16 @@ bool operator<(const Card& k, const Card& c){
 		return (k.suit < c.suit);
 	else
 		return false;
+}
+
+
+bool operator==(const Card& k , const Card& c){
+	if (k.rank == c.rank){
+		if (k.suit == c.suit){
+			return true;
+		}
+	}
+	return false;
 }
 
 

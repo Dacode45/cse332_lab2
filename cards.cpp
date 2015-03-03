@@ -92,13 +92,30 @@ int parseCardFile(const char* filename, std::vector<Card> &cards){
 	}
 }
 
+char* getCmdOption(char ** begin, char** end, const std::string & option){
+	char ** itr = std::find(begin, end, option);
+	if (itr != end && ++itr != end){
+		return *itr;
+	}
+	return 0;
+}
+
+bool cmdOptionExists(char** begin, char** end, const std::string& option){
+	return std::find(begin, end, option) != end;
+}
+
+
+
 /*
 How it works.
 Each card gets a weight depending on the individual ranking scheme for that hand
 The weight is multiplied by the rank to determin that cards value. Values are added
 cards with a higher value are better hands than cards with a lesser value.
 For this to work the weights must satisfy the inequality
-a> 13*b + 13*c + 13*d+e; b> 13*c + 13*d + 13*e; c > 13*d + 13*e
+a> 13*b + 13*c + 13*d + 13*e; 
+b> 13*c + 13*d + 13*e; 
+c > 13*d + 13*e;
+d>13*e
 setting e to 1
 d = 14, c = 196, b = 2744, a = 38416 satisfies this inequality.
 The max rank for a hand is therefore a+b+c+d+e or 537823.
@@ -122,13 +139,13 @@ CARDWEIGHT_D = 14,
 CARDWEIGHT_E = 1;
 
 const unsigned int CARDWEIGHT_TOTAL = (CARDWEIGHT_A + CARDWEIGHT_B + CARDWEIGHT_C + CARDWEIGHT_D + CARDWEIGHT_E) * 13;
-unsigned int checkHand(std::vector<Card> &cards){
-	std::sort(cards.begin(), cards.end());
+unsigned int checkHand(const std::vector<Card> &cards){
+	//std::sort(cards.begin(), cards.end());
 	int numSpades = 0, numClubs = 0, numDiamonds = 0, numHearts = 0, numSame = 0, numConsecutive = 0;
 	int numBreaks = 0;//Check for when cards stop being same value
 
 	
-	for (auto it = cards.begin(); it != cards.end()-1; ++it){
+	for (auto it = cards.cbegin(); it != cards.cend()-1; ++it){
 		switch (it->suit){
 		case Card::SUIT::clubs:
 			numClubs++;
@@ -301,11 +318,20 @@ unsigned int checkHand(std::vector<Card> &cards){
 	
 	return UNRANKED *CARDWEIGHT_TOTAL + (CARDWEIGHT_A* cards[4].rank + CARDWEIGHT_B* cards[3].rank + CARDWEIGHT_C* cards[2].rank + CARDWEIGHT_D* cards[1].rank + CARDWEIGHT_E*cards[0].rank);
 }
+
 bool handComparator(std::vector<Card>& hand1, std::vector<Card>& hand2){
 	float hand1_value = std::ceil(((float)checkHand(hand1)) / ((float)(CARDWEIGHT_TOTAL)));
 	float hand2_value = std::ceil(((float)checkHand(hand2)) / ((float)(CARDWEIGHT_TOTAL)));
 	return hand1_value < hand2_value;
 }
+
+bool poker_rank(const Hand& h1, const Hand& h2){
+	 
+	 unsigned int h1_value = checkHand(h1.getCards());
+	 unsigned int h2_value = checkHand(h2.getCards());
+	 return h1_value < h2_value;
+}
+
 int printCards( std::vector<Card> &cards){
 	//EX Three of Diamonds
 	try{
@@ -386,7 +412,7 @@ int printCards( std::vector<Card> &cards){
 int usageMessage(const char* pName){
 	try{
 
-		std::cout << "Usage: " << pName << " cards.txt";
+		std::cout << "Usage: " << pName << " cards.txt [-shuffle]";
 		return PRINTEDUSAGEMESSAGE;
 	}
 	catch (int e){
@@ -399,7 +425,8 @@ int usageMessage(const char* pName){
 int usageMessage(const char* pName, const char* errMsg){
 	try{
 
-		std::cout << "Usage: " << pName << " cards.txt";
+		std::cout << "Usage: " << pName << " cards.txt [-shuffle]" << std::endl;
+		std::cout << errMsg;
 		return PRINTEDUSAGEMESSAGE;
 	}
 	catch (int e){
@@ -437,6 +464,24 @@ void handleErrMessages(const char* pName, int err){
 	case BADNUMBEROFCARDSINHAND: //BADNUMBEROFCARDSINHAND
 		std::cout << "\nThere should only ever be 5 cards in your hand at a time. no more no less\n";
 		break;
+	case WRONGCOMMANDLINEARGS:
+		std::cout << "\nThe only command line arguments should be -shuffle and the file name. \n";
+		usageMessage(program_name);
+		break;
+	case NOTENOUGHARGUMENTS:
+		std::cout << "\nNeed Command Line arguments\n";
+		usageMessage(program_name);
+		break;
+	case NOTENOUGHARGUMENTS_SHUFFLE:
+		std::cout << "\nNeed filename too\n";
+		usageMessage(program_name);
+		break;
+	case NOCOMMANDLINEARGS:
+		std::cout << "\nYou need commands to run this program\n";
+		usageMessage(program_name);
+		break;
+
+
 	default:
 		break;
 	}
